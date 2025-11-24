@@ -157,6 +157,66 @@
     margin-bottom: 1.5rem;
     overflow: hidden;
   }
+
+  .game-hud {
+    margin-bottom: 0.5rem;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+  }
+  
+/* Zone de jeu (grille) */
+.grid {
+    position: relative;
+    background: black;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Chaque case */
+  .tile {
+    position: absolute;
+    box-sizing: border-box;
+  }
+  
+  /* Murs */
+  .wall {
+    background: #1b1bff;
+    box-shadow: 0 0 6px #4a4aff;
+    border-radius: 4px;
+  }
+  
+  /* Cases vides */
+  .empty {
+    background: black;
+  }
+  
+  /* Pastille */
+  .dot {
+    background: none;
+  }
+  
+  .dot::after {
+    content: "";
+    display: block;
+    width: 6px;
+    height: 6px;
+    background: #ffffff;
+    border-radius: 50%;
+    margin: auto;
+    position: relative;
+    top: 9px;
+  }
+  
+  /* Pacman */
+  .pacman {
+    position: absolute;
+    background: #ffdd33;
+    border-radius: 50%;
+    box-shadow:
+      0 0 6px #ffaa00,
+      0 0 12px #ffaa00;
+    transition: transform 0.12s linear;
+  }
   
   /* Pacman "placeholder" : un rond jaune */
   .pacman-player {

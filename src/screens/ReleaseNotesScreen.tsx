@@ -10,6 +10,19 @@ export default function ReleaseNotesScreen({ onBack }: ReleaseNotesScreenProps) 
       <h1>{APP_NAME} – Release notes</h1>
       <p>Version actuelle : {APP_VERSION}</p>
 
+      <h2>v0.5.0 – Gameplay : déplacement fluide + pastilles + score</h2>
+        <ul>
+          <li>Ajout du moteur de déplacement <strong>case par case</strong></li>
+          <li>Vitesse de déplacement constante (STEP_MS)</li>
+          <li>Système de direction + prochaine direction (virages parfaits)</li>
+          <li>Correction : Pac‑Man ne glisse plus, ne s’emballe plus après répétition clavier</li>
+          <li>Ajout de la <strong>grille dynamique</strong> dérivée du niveau (LEVEL_1 → grid modifiable)</li>
+          <li>Implémentation des <strong>pastilles</strong> (mangeables, disparition)</li>
+          <li>Ajout du <strong>score</strong></li>
+          <li>Correction du comportement : <strong>arrêt propre</strong> quand on relâche la direction actuelle</li>
+          <li>Global : maniabilité validée par l’équipe (🎉)</li>
+        </ul>      
+
       <h2>v0.4.0 – Déplacement de Pacman</h2>
         <ul>
           <li>Ajout d'un premier moteur de déplacement pour Pacman</li>
