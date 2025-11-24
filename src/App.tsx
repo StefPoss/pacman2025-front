@@ -23,9 +23,11 @@ function App() {
       {screen === "menu" && (
         <div className="screen center">
           <h1>Menu (placeholder)</h1>
-          <button onClick={() => setScreen("releaseNotes")}>
-            Release notes
-          </button>
+
+          <button onClick={() => setScreen("game")}>Start game</button>
+          <button onClick={() => setScreen("hallOfFame")}>Hall of Fame</button>
+          <button onClick={() => setScreen("releaseNotes")}>Release notes</button>
+          <button onClick={() => setScreen("credits")}>Crédits</button>
         </div>
       )}
 
@@ -33,12 +35,7 @@ function App() {
         <ReleaseNotesScreen onBack={() => setScreen("menu")} />
       )}
 
-      {/* Les autres écrans viendront ensuite :
-          - GameScreen
-          - GameOverScreen
-          - HallOfFameScreen
-          - CreditsScreen
-      */}
+      {/* Les autres écrans viendront plus tard */}
     </div>
   );
 }

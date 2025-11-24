@@ -60,11 +60,39 @@
     margin-bottom: 2rem;
     animation: blink 1.4s infinite;
   }
+
+  /* Police rétro pixel */
+.splash-credits,
+.splash-author {
+  font-family: 'Press Start 2P', monospace;
+}
   
-  .splash-credits {
-    font-size: 0.8rem;
-    opacity: 0.6;
+/* Texte “vibe coded by…” */
+.splash-credits {
+    margin-top: 30px;
+    font-size: 0.9rem;
+    color: #cccccc;
+    opacity: 0.9;
+    text-align: center;
   }
+  
+/* Style néon jaune façon arcade */
+.splash-author {
+    color: #ffdd33;
+    text-shadow:
+      0 0 4px #ffdd33,
+      0 0 8px #ffaa00,
+      0 0 12px #ffaa00,
+      0 0 20px #ff8800;
+  }
+  
+  .splash-version {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    opacity: 0.7;
+  }
+  
+  
   
   @keyframes blink {
     0%, 100% { opacity: 0.25; }
