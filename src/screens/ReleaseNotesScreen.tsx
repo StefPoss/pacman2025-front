@@ -10,6 +10,13 @@ export default function ReleaseNotesScreen({ onBack }: ReleaseNotesScreenProps) 
       <h1>{APP_NAME} – Release notes</h1>
       <p>Version actuelle : {APP_VERSION}</p>
 
+      <h2>v0.3.0 – Écran de jeu (squelette)</h2>
+        <ul>
+          <li>Ajout de l'écran <strong>Start Game</strong> (GameScreen)</li>
+          <li>Zone de jeu placeholder prête à accueillir le moteur de Pacman</li>
+          <li>Bouton "Retour au menu" depuis l'écran de jeu</li>
+        </ul>      
+
       <h2>v0.2.0 – Menu principal complet</h2>
         <ul>
           <li>Création du Menu principal avec 6 sections :</li>

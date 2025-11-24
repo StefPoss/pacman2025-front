@@ -1,6 +1,7 @@
 import { useState } from "react";
 import SplashScreen from "./screens/SplashScreen";
 import MenuScreen from "./screens/MenuScreen";
+import GameScreen from "./screens/GameScreen";
 import ReleaseNotesScreen from "./screens/ReleaseNotesScreen";
 
 type Screen =
@@ -34,6 +35,11 @@ function App() {
           onCredits={() => setScreen("credits")}
         />
       )}
+
+      {screen === "game" && (
+        <GameScreen onBackToMenu={() => setScreen("menu")} />
+    )}
+
 
       {screen === "themes" && (
         <div className="screen center">
