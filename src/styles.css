@@ -91,6 +91,56 @@
     font-size: 0.9rem;
     opacity: 0.7;
   }
+
+  .menu-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.6rem;
+    margin-bottom: 2rem;
+    color: #ffdd33;
+    text-shadow: 0 0 6px #ffaa00;
+  }
+  
+  .menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+/* Tous les boutons "arcade" des écrans (menu + autres écrans) */
+.menu-buttons button,
+.screen.center button {
+  font-family: 'Press Start 2P', monospace;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  background: black;
+  border: 2px solid #ffdd33;
+  color: #ffdd33;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+/* Hover arcade */
+.menu-buttons button:hover,
+.screen.center button:hover {
+  background: #ffdd33;
+  color: black;
+  box-shadow: 0 0 12px #ffdd33;
+}
+
+/* Petit spacing pour les écrans secondaires */
+.screen.center button {
+  margin-top: 1.5rem;
+}
+
+  
+  button {
+    cursor: pointer;
+  }
+  
+  .screen.center button {
+    margin-top: 1.5rem;
+  }
+  
   
   
   
