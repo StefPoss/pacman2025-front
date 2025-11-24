@@ -10,6 +10,14 @@ export default function ReleaseNotesScreen({ onBack }: ReleaseNotesScreenProps) 
       <h1>{APP_NAME} – Release notes</h1>
       <p>Version actuelle : {APP_VERSION}</p>
 
+      <h2>v0.4.0 – Déplacement de Pacman</h2>
+        <ul>
+          <li>Ajout d'un premier moteur de déplacement pour Pacman</li>
+          <li>Contrôles clavier via les flèches (↑ ↓ ← →)</li>
+          <li>Pacman se déplace dans la zone de jeu avec limites (pas de sortie d'écran)</li>
+          <li>Préparation de la zone de jeu pour le futur labyrinthe et les fantômes</li>
+        </ul>
+
       <h2>v0.3.0 – Écran de jeu (squelette)</h2>
         <ul>
           <li>Ajout de l'écran <strong>Start Game</strong> (GameScreen)</li>
