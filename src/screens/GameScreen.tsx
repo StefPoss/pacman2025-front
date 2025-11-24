@@ -9,6 +9,13 @@ type GameScreenProps = {
 type Position = { x: number; y: number };
 type Direction = "up" | "down" | "left" | "right" | null;
 
+type Ghost = {
+  id: string;
+  position: Position;
+  direction: Direction;
+  color: string;
+};
+
 type GameState = {
   grid: string[];
   pacman: Position;
@@ -18,10 +25,15 @@ type GameState = {
   lives: number;
   remainingDots: number;
   hasWon: boolean;
+  ghosts: Ghost[];
+  isGameOver: boolean;
+  ghostStepCounter: number;
+  respawnCooldownMs: number;
 };
 
 const TILE_SIZE = 24;
-const STEP_MS = 120;
+const STEP_MS = 120;          // tick du jeu
+const GHOST_STEP_FACTOR = 3;  // fantômes plus lents
 
 const directionFromKey: Record<string, Direction> = {
   ArrowUp: "up",
@@ -48,7 +60,86 @@ const countDots = (grid: string[]): number =>
     0
   );
 
+const createInitialGhosts = (): Ghost[] => [
+  {
+    id: "blinky",
+    position: { x: 13, y: 5 },
+    direction: "left",
+    color: "#ff4b4b",
+  },
+  {
+    id: "pinky",
+    position: { x: 14, y: 5 },
+    direction: "right",
+    color: "#ff9ad5",
+  },
+  {
+    id: "inky",
+    position: { x: 12, y: 6 },
+    direction: "up",
+    color: "#4bffff",
+  },
+  {
+    id: "clyde",
+    position: { x: 15, y: 6 },
+    direction: "down",
+    color: "#ffb84b",
+  },
+];
+
+const canMoveToInGrid = (grid: string[], x: number, y: number): boolean => {
+  if (y < 0 || y >= grid.length) return false;
+  if (x < 0 || x >= grid[y].length) return false;
+  return grid[y][x] !== "#";
+};
+
+const oppositeDirection = (dir: Direction): Direction => {
+  if (dir === "up") return "down";
+  if (dir === "down") return "up";
+  if (dir === "left") return "right";
+  if (dir === "right") return "left";
+  return null;
+};
+
+const moveGhostRandomly = (ghost: Ghost, grid: string[]): Ghost => {
+  const { position, direction } = ghost;
+  const candidates: { dir: Direction; x: number; y: number }[] = [];
+
+  const tryDir = (dir: Direction, dx: number, dy: number) => {
+    const nx = position.x + dx;
+    const ny = position.y + dy;
+    if (canMoveToInGrid(grid, nx, ny)) {
+      candidates.push({ dir, x: nx, y: ny });
+    }
+  };
+
+  tryDir("up", 0, -1);
+  tryDir("down", 0, 1);
+  tryDir("left", -1, 0);
+  tryDir("right", 1, 0);
+
+  if (candidates.length === 0) {
+    return ghost;
+  }
+
+  const opposite = oppositeDirection(direction);
+  const filtered =
+    direction && candidates.length > 1
+      ? candidates.filter((c) => c.dir !== opposite)
+      : candidates;
+
+  const options = filtered.length > 0 ? filtered : candidates;
+  const choice = options[Math.floor(Math.random() * options.length)];
+
+  return {
+    ...ghost,
+    position: { x: choice.x, y: choice.y },
+    direction: choice.dir,
+  };
+};
+
 const initialGrid = createInitialGrid();
+const initialGhosts = createInitialGhosts();
 
 const initialState: GameState = {
   grid: initialGrid,
@@ -59,12 +150,16 @@ const initialState: GameState = {
   lives: 3,
   remainingDots: countDots(initialGrid),
   hasWon: false,
+  ghosts: initialGhosts,
+  isGameOver: false,
+  ghostStepCounter: 0,
+  respawnCooldownMs: 0,
 };
 
 export default function GameScreen({ onBackToMenu }: GameScreenProps) {
   const [state, setState] = useState<GameState>(initialState);
 
-  // ---------- CLAVIER ----------
+  // -------- CLAVIER --------
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const dir = directionFromKey[e.key];
@@ -101,7 +196,7 @@ export default function GameScreen({ onBackToMenu }: GameScreenProps) {
     };
   }, []);
 
-  // ---------- BOUCLE DE JEU ----------
+  // -------- BOUCLE DE JEU --------
   useEffect(() => {
     const interval = window.setInterval(() => {
       setState((prev) => {
@@ -114,19 +209,27 @@ export default function GameScreen({ onBackToMenu }: GameScreenProps) {
           lives,
           remainingDots,
           hasWon,
+          ghosts,
+          isGameOver,
+          ghostStepCounter,
+          respawnCooldownMs,
         } = prev;
 
-        if (hasWon) {
+        // stop total en win / game over
+        if (hasWon || isGameOver) {
           return prev;
         }
 
-        const canMoveTo = (x: number, y: number): boolean => {
-          if (y < 0 || y >= grid.length) return false;
-          if (x < 0 || x >= grid[y].length) return false;
-          return grid[y][x] !== "#";
-        };
+        // cooldown après perte de vie : freeze complet
+        if (respawnCooldownMs > 0) {
+          const remaining = Math.max(0, respawnCooldownMs - STEP_MS);
+          return {
+            ...prev,
+            respawnCooldownMs: remaining,
+          };
+        }
 
-        const moveOnce = (
+        const movePacmanOnce = (
           dir: Direction,
           pos: Position,
           gridIn: string[],
@@ -153,7 +256,7 @@ export default function GameScreen({ onBackToMenu }: GameScreenProps) {
           const nx = pos.x + dx;
           const ny = pos.y + dy;
 
-          if (!canMoveTo(nx, ny)) {
+          if (!canMoveToInGrid(gridIn, nx, ny)) {
             return {
               moved: false,
               pos,
@@ -187,54 +290,128 @@ export default function GameScreen({ onBackToMenu }: GameScreenProps) {
           };
         };
 
-        let newDir = direction;
-        let newNext = nextDirection;
-        let newPos = pacman;
-        let newGrid = grid;
-        let newScore = score;
-        let newDots = remainingDots;
+        // variables "next"
+        let nextGrid = grid;
+        let nextPacman = pacman;
+        let nextDir = direction;
+        let nextNextDir = nextDirection;
+        let nextScore = score;
+        let nextDots = remainingDots;
+        let nextGhosts = ghosts;
+        let nextLives = lives;
+        let nextHasWon = hasWon;
+        let nextIsGameOver = isGameOver;
+        let nextGhostStepCounter = ghostStepCounter;
+        let nextRespawn = respawnCooldownMs;
 
-        // 1) priorité à la nextDirection
+        // 1) Pacman : priorité à la direction demandée
         if (nextDirection) {
-          const res = moveOnce(
+          const res = movePacmanOnce(
             nextDirection,
-            newPos,
-            newGrid,
-            newScore,
-            newDots
+            nextPacman,
+            nextGrid,
+            nextScore,
+            nextDots
           );
           if (res.moved) {
-            newDir = nextDirection;
-            newPos = res.pos;
-            newGrid = res.grid;
-            newScore = res.score;
-            newDots = res.dots;
+            nextDir = nextDirection;
+            nextPacman = res.pos;
+            nextGrid = res.grid;
+            nextScore = res.score;
+            nextDots = res.dots;
           }
         }
 
-        // 2) sinon on continue dans la direction actuelle
-        if (!hasWon && !nextDirection && direction) {
-          const res = moveOnce(direction, newPos, newGrid, newScore, newDots);
+        // 2) sinon, on continue dans la direction actuelle
+        if (!nextHasWon && !nextDirection && direction) {
+          const res = movePacmanOnce(
+            direction,
+            nextPacman,
+            nextGrid,
+            nextScore,
+            nextDots
+          );
           if (res.moved) {
-            newPos = res.pos;
-            newGrid = res.grid;
-            newScore = res.score;
-            newDots = res.dots;
+            nextPacman = res.pos;
+            nextGrid = res.grid;
+            nextScore = res.score;
+            nextDots = res.dots;
           }
         }
 
-        // calcul du nouvel état de victoire
-        const won = hasWon || newDots <= 0;
+        // 3) collision après déplacement de Pacman
+        const hitAfterPacmanMove = nextGhosts.some(
+          (g) =>
+            g.position.x === nextPacman.x && g.position.y === nextPacman.y
+        );
+        if (hitAfterPacmanMove) {
+          const livesAfter = nextLives - 1;
+          const gameOverAfter = livesAfter <= 0;
+
+          return {
+            grid: nextGrid,
+            pacman: findInitialPacman(),
+            direction: null,
+            nextDirection: null,
+            score: nextScore,
+            lives: livesAfter,
+            remainingDots: nextDots,
+            hasWon: false,
+            ghosts: createInitialGhosts(),
+            isGameOver: gameOverAfter,
+            ghostStepCounter: 0,
+            respawnCooldownMs: gameOverAfter ? 0 : 1500, // 1.5s de pause
+          };
+        }
+
+        // 4) déplacement des fantômes (plus lents)
+        nextGhostStepCounter += 1;
+        if (nextGhostStepCounter >= GHOST_STEP_FACTOR) {
+          nextGhosts = nextGhosts.map((g) => moveGhostRandomly(g, nextGrid));
+          nextGhostStepCounter = 0;
+        }
+
+        // 5) collision après déplacement des fantômes
+        const hitAfterGhostMove = nextGhosts.some(
+          (g) =>
+            g.position.x === nextPacman.x && g.position.y === nextPacman.y
+        );
+        if (hitAfterGhostMove) {
+          const livesAfter = nextLives - 1;
+          const gameOverAfter = livesAfter <= 0;
+
+          return {
+            grid: nextGrid,
+            pacman: findInitialPacman(),
+            direction: null,
+            nextDirection: null,
+            score: nextScore,
+            lives: livesAfter,
+            remainingDots: nextDots,
+            hasWon: false,
+            ghosts: createInitialGhosts(),
+            isGameOver: gameOverAfter,
+            ghostStepCounter: 0,
+            respawnCooldownMs: gameOverAfter ? 0 : 1500,
+          };
+        }
+
+        // 6) victoire si plus de pastilles
+        const hasWonAfter = nextHasWon || nextDots <= 0;
 
         return {
-          grid: newGrid,
-          pacman: newPos,
-          direction: newDir,
-          nextDirection: newNext,
-          score: newScore,
-          lives,
-          remainingDots: newDots,
-          hasWon: won,
+          grid: nextGrid,
+          pacman: nextPacman,
+          direction: nextDir,
+          nextDirection: nextNextDir,
+          score: nextScore,
+          lives: nextLives,
+          remainingDots: nextDots,
+          hasWon: hasWonAfter,
+          ghosts: nextGhosts,
+          isGameOver: nextIsGameOver || false, // jamais forcé à true ici
+          ghostStepCounter: nextGhostStepCounter,
+          respawnCooldownMs: nextRespawn,
         };
       });
     }, STEP_MS);
@@ -242,10 +419,11 @@ export default function GameScreen({ onBackToMenu }: GameScreenProps) {
     return () => window.clearInterval(interval);
   }, []);
 
-  const { grid, pacman, score, lives, hasWon } = state;
+  const { grid, pacman, score, lives, hasWon, ghosts, isGameOver } = state;
 
   const handleNextLevel = () => {
     const newGrid = createInitialGrid();
+    const newGhosts = createInitialGhosts();
     setState((prev) => ({
       ...prev,
       grid: newGrid,
@@ -254,7 +432,30 @@ export default function GameScreen({ onBackToMenu }: GameScreenProps) {
       nextDirection: null,
       remainingDots: countDots(newGrid),
       hasWon: false,
+      ghosts: newGhosts,
+      isGameOver: false,
+      ghostStepCounter: 0,
+      respawnCooldownMs: 0,
     }));
+  };
+
+  const handleRestart = () => {
+    const newGrid = createInitialGrid();
+    const newGhosts = createInitialGhosts();
+    setState({
+      grid: newGrid,
+      pacman: findInitialPacman(),
+      direction: null,
+      nextDirection: null,
+      score: 0,
+      lives: 3,
+      remainingDots: countDots(newGrid),
+      hasWon: false,
+      ghosts: newGhosts,
+      isGameOver: false,
+      ghostStepCounter: 0,
+      respawnCooldownMs: 0,
+    });
   };
 
   return (
@@ -294,6 +495,7 @@ export default function GameScreen({ onBackToMenu }: GameScreenProps) {
           ))
         )}
 
+        {/* Pacman */}
         <div
           className="pacman"
           style={{
@@ -305,12 +507,41 @@ export default function GameScreen({ onBackToMenu }: GameScreenProps) {
           }}
         />
 
-        {hasWon && (
+        {/* Fantômes */}
+        {ghosts.map((g) => (
+          <div
+            key={g.id}
+            className="ghost"
+            style={{
+              width: TILE_SIZE,
+              height: TILE_SIZE,
+              transform: `translate(${g.position.x * TILE_SIZE}px, ${
+                g.position.y * TILE_SIZE
+              }px)`,
+              backgroundColor: g.color,
+            }}
+          />
+        ))}
+
+        {/* Overlay WIN */}
+        {hasWon && !isGameOver && (
           <div className="overlay">
             <div className="overlay-box">
               <h2>YOU WIN!</h2>
               <p>Niveau complété</p>
               <button onClick={handleNextLevel}>Next level</button>
+              <button onClick={onBackToMenu}>Retour au menu</button>
+            </div>
+          </div>
+        )}
+
+        {/* Overlay GAME OVER */}
+        {isGameOver && (
+          <div className="overlay">
+            <div className="overlay-box">
+              <h2>GAME OVER</h2>
+              <p>Score : {score}</p>
+              <button onClick={handleRestart}>Restart</button>
               <button onClick={onBackToMenu}>Retour au menu</button>
             </div>
           </div>

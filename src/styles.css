@@ -245,6 +245,7 @@
   /* Pacman */
   .pacman {
     position: absolute;
+    z-index: 2;
     background: #ffdd33;
     border-radius: 50%;
     box-shadow:
@@ -266,7 +267,21 @@
     transition: transform 0.08s linear;
   }
   
+  .ghost {
+    position: absolute;
+    border-radius: 8px;
+    box-shadow:
+      0 0 6px rgba(255, 255, 255, 0.4),
+      0 0 12px rgba(255, 255, 255, 0.2);
+    transition: transform 0.4s linear;
+  }
   
+
+  .ghost {
+    z-index: 2;
+  }  
+
+
   .game-screen .game-area-placeholder {
     width: min(80vw, 640px);
     height: min(80vw, 480px);

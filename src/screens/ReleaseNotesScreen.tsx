@@ -10,6 +10,19 @@ export default function ReleaseNotesScreen({ onBack }: ReleaseNotesScreenProps) 
       <h1>{APP_NAME} – Release notes</h1>
       <p>Version actuelle : {APP_VERSION}</p>
 
+
+      <h2>v0.7.0 – Ajout des fantômes & mécanique de vies</h2>
+      <ul>
+        <li>Ajout de 4 fantômes : Blinky, Pinky, Inky et Clyde</li>
+        <li>IA simple : déplacement intelligent aléatoire avec évitement du demi‑tour</li>
+        <li>Vitesse des fantômes ajustée pour être fluide mais lisible (glissement 0.4s)</li>
+        <li>Détection de collision Pacman ↔ fantôme</li>
+        <li>Système de vies : Pacman commence avec 3 vies</li>
+        <li>Perte d’une vie → reset positions Pacman + fantômes</li>
+        <li>Ajout d’un temps de pause (respawn) pour rendre la mort lisible</li>
+        <li>GAME OVER lorsque toutes les vies sont perdues</li>
+      </ul>
+
       <h2>v0.6.0 – Boucle de jeu niveau 1</h2>
         <ul>
           <li>Ajout d'un système de <strong>vies</strong> (affichage des ❤, 3 au départ)</li>
