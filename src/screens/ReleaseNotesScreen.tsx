@@ -14,6 +14,18 @@ export default function ReleaseNotesScreen({ onBack }: ReleaseNotesScreenProps) 
         </h1>
         <p>Version actuelle : {APP_VERSION}</p>
 
+        <h2>v0.8.3 – Release Notes Ghostify</h2>
+          <ul>
+            <li>
+              Augmentation de la population de fantômes <strong>Release Notes</strong> :
+              <ul>
+                <li>ajout de fantômes sur tous les niveaux,</li>
+                <li>déblocage du fantôme bloqué en level 1 ,</li>
+                <li>correction des layouts pour éviter les zones inaccessibles.</li>
+              </ul>
+            </li>
+          </ul>
+
         <h2>v0.8.2 – Release Notes Screen polish</h2>
           <ul>
             <li>
